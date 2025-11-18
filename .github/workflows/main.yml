@@ -2,24 +2,37 @@ name: Generate Sitemap
 
 on:
   push:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches: [ main ]  
+  workflow_dispatch: 
 
 jobs:
   generate-sitemap:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  !
 
       - name: Generate sitemap.xml
-        uses: cicirello/generate-sitemap@2.0.0
+        id: sitemap
+        uses: cicirello/generate-sitemap@v1.10.3 
         with:
-          base-url: https://xn--vk1bl26ah5civp.p-e.kr/
+          base-url-path: https://xn--vk1bl26ah5civp.p-e.kr/ 
+
+      - name: Output stats  # 생성 결과 확인용 (디버깅에 좋음)
+        run: |
+          echo "Sitemap path: ${{ steps.sitemap.outputs.sitemap-path }}"
+          echo "URLs added: ${{ steps.sitemap.outputs.url-count }}"
 
       - name: Commit sitemap
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           git add sitemap.xml
-          git commit -m "Auto generate sitemap.xml" || echo "Nothing to commit"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto generate sitemap.xml"
+            git push
+          fi
